@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, File, UploadFile
 from fastapi.responses import RedirectResponse
 import json
 import psycopg2
@@ -575,18 +575,17 @@ def update_metadata(update: MetadataUpdate):
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 @router.post("/ingest/upload_file_metadata")
-async def upload_file_metadata():
+async def upload_file_metadata(file: UploadFile = File(...)):
     logging.debug("--- Starting simple raw file test endpoint ---")
 
     # will be provided as an input
     dataset_id_to_use = 1 
-    json_file_path = "output.json"
+    contents = await file.read()
     
     conn = None
     try:
-        logging.debug(f"Attempting to read file at: {json_file_path}")
-        with open(json_file_path, 'r') as f:
-            ingestion_data = json.load(f)
+        decoded_contents = contents.decode('utf-8')
+        ingestion_data = json.loads(decoded_contents)
         logging.debug("File read and parsed successfully.")
 
         raw_files = ingestion_data['data']['files']['raw']
@@ -631,9 +630,8 @@ async def upload_file_metadata():
         logging.debug("Transaction committed successfully.")
         return {"status": "success", "message": f"{len(raw_files)} raw files have been inserted for dataset ID {dataset_id_to_use}."}
 
-    except FileNotFoundError:
-        logging.debug(f"ERROR: The file was not found at '{json_file_path}'.")
-        raise HTTPException(status_code=500, detail=f"Error: The file was not found at '{json_file_path}'. Make sure it's in the project root directory.")
+    except (UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise HTTPException(status_code=400, detail="Invalid file content. Must be a valid UTF-8 encoded JSON file.")
     except KeyError as e:
         logging.debug(f"ERROR: A key was not found in the JSON file: {e}")
         raise HTTPException(status_code=500, detail=f"Error: The JSON file is missing an expected key: {e}")

@@ -121,3 +121,12 @@ class FileResponse(BaseModel):
     sample_id: Optional[int] = None
     ext_sample_id: Optional[str] = None
     sample_metadata: Optional[List[SampleMetadata]] = None
+
+class FileMetadataItem(BaseModel):
+    metadata_key: str
+    metadata_value: str
+
+class FileWithMetadata(BaseModel):
+    id: int
+    file_type: str
+    metadata: List[FileMetadataItem]

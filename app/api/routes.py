@@ -1,5 +1,5 @@
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Query, File, UploadFile
+from fastapi import APIRouter, HTTPException, Query, File, UploadFile, Form
 from fastapi.responses import RedirectResponse
 import json
 import psycopg2
@@ -571,10 +571,7 @@ def update_metadata(update: MetadataUpdate):
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 @router.post("/ingest/upload_file_metadata")
-async def upload_file_metadata(file: UploadFile = File(...)):
-
-    # will be provided as an input
-    dataset_id_to_use = 1 
+async def upload_file_metadata(dataset_id: int = Form(...), file: UploadFile = File(...)):
 
     try:
         contents = await file.read()
@@ -607,7 +604,7 @@ async def upload_file_metadata(file: UploadFile = File(...)):
                 cursor=cursor,
                 file_list=file_list,
                 file_type_name=file_type,
-                dataset_id=dataset_id_to_use
+                dataset_id=dataset_id
             )
 
             summary[file_type]["count"] = count
@@ -618,7 +615,7 @@ async def upload_file_metadata(file: UploadFile = File(...)):
         
         return {
             "status": "success",
-            "message": f"Succesfully ingested files for dataset ID {dataset_id_to_use}",
+            "message": f"Succesfully ingested files for dataset ID {dataset_id}",
             "summary": {
                 "file_size_unit": file_size_unit,
                 "raw_files": summary["raw"],

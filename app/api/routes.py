@@ -24,7 +24,7 @@ from app.schemas.schemas import (
     MetadataUpdate,
     DatasetSummary,
     Totals,
-    ProjectSummary
+    ProjectSummary,
     FileWithMetadata
 )
 

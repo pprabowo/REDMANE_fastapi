@@ -122,6 +122,29 @@ class FileResponse(BaseModel):
     ext_sample_id: Optional[str] = None
     sample_metadata: Optional[List[SampleMetadata]] = None
 
+class DatasetSummary(BaseModel):
+    dataset_id: int
+    dataset_name: str
+    file_count: int
+    patient_count: int
+    sample_count: int
+    # keep units consistent with your endpoint; here we return KB
+    total_size_kb: int
+
+
+class Totals(BaseModel):
+    file_count: int
+    patient_count: int
+    sample_count: int
+    total_size_kb: int
+
+
+class ProjectSummary(BaseModel):
+    project_id: int
+    project_name: Optional[str] = None
+    totals: Totals
+    datasets: List[DatasetSummary]
+
 class FileMetadataItem(BaseModel):
     metadata_key: str
     metadata_value: str

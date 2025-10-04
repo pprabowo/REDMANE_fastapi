@@ -51,6 +51,71 @@ def get_connection():
         port=DB_PORT
     )
 
+@router.post("/datasets/")
+async def create_dataset(
+    project_id: int = Form(...),
+    name: str = Form(...),
+    abstract: str = Form(...),
+    site: str = Form(...),
+    location: Optional[str] = Form(None),
+    raw_files: Optional[str] = Form(None),
+    processed_files: Optional[str] = Form(None),
+    summary_files: Optional[str] = Form(None),
+    readme_files: Optional[str] = Form(None)
+):
+    """
+    Create a new dataset entry and insert optional metadata into datasets_metadata.
+    """
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Insert dataset
+        cursor.execute(
+            """
+            INSERT INTO datasets (project_id, name, abstract, site, created_at)
+            VALUES (%s, %s, %s, %s, NOW())
+            RETURNING id
+            """,
+            (project_id, name, abstract, site)
+        )
+        dataset_id = cursor.fetchone()[0]
+
+        # Insert optional metadata only if present
+        metadata_entries = []
+        if raw_files:
+            metadata_entries.append(('raw_files', raw_files))
+        if processed_files:
+            metadata_entries.append(('processed_files', processed_files))
+        if summary_files:
+            metadata_entries.append(('summary_files', summary_files))
+        if readme_files:
+            metadata_entries.append(('readme_files', readme_files))
+        if location:
+            metadata_entries.append(('location', location))
+
+        for key, value in metadata_entries:
+            cursor.execute(
+                """
+                INSERT INTO datasets_metadata (dataset_id, key, value)
+                VALUES (%s, %s, %s)
+                """,
+                (dataset_id, key, value)
+            )
+
+        conn.commit()
+
+        return {
+            "status": "success",
+            "dataset_id": dataset_id,
+            "message": f"Dataset '{name}' created successfully"
+        }
+
+    except Error as e:
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 @router.post("/add_files/")
 async def add_files(files: List[FileCreate]):

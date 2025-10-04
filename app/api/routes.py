@@ -542,8 +542,8 @@ async def get_datasets(
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 
-@router.get("/datasets_with_metadata/{dataset_id}", response_model=DatasetWithMetadata)
-async def get_dataset_with_metadata(dataset_id: int, project_id: int):
+@router.get("/datasets_with_metadata/{dataset_id}")
+async def get_dataset_with_metadata(dataset_id: int):
     """
     Fetch dataset details (and its metadata) for the given dataset_id + project_id.
     """
@@ -554,42 +554,38 @@ async def get_dataset_with_metadata(dataset_id: int, project_id: int):
         # Fetch dataset
         cursor.execute(
             """
-            SELECT id, project_id, name
+            SELECT id, project_id, name, abstract, site, created_at
             FROM datasets
-            WHERE id = %s AND project_id = %s
-            """,
-            (dataset_id, project_id)
-        )
+            WHERE id = %s
+        """, (dataset_id,))
         dataset_row = cursor.fetchone()
+
         if not dataset_row:
             raise HTTPException(status_code=404, detail="Dataset not found")
-
-        # Fetch dataset metadata
-        cursor.execute(
-            """
-            SELECT id, dataset_id, key, value
-            FROM datasets_metadata
-            WHERE dataset_id = %s
-            """,
-            (dataset_id,)
-        )
-        metadata_rows = cursor.fetchall()
-        conn.close()
 
         dataset = {
             "id": dataset_row[0],
             "project_id": dataset_row[1],
             "name": dataset_row[2],
-            "metadata": [
-                {"id": row[0], "dataset_id": row[1], "key": row[2], "value": row[3]}
-                for row in metadata_rows
-            ],
+            "abstract": dataset_row[3],
+            "site": dataset_row[4],
+            "created_at": dataset_row[5]
         }
-        return dataset
+
+        cursor.execute("""
+            SELECT key, value
+            FROM datasets_metadata
+            WHERE dataset_id = %s
+        """, (dataset_id,))
+        metadata_rows = cursor.fetchall()
+        metadata = [{"key": row[0], "value": row[1]} for row in metadata_rows]
+
+        conn.close()
+
+        return {**dataset, "metadata": metadata}
 
     except Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-
 
 @router.get("/files_with_metadata/{dataset_id}", response_model=List[FileResponse])
 async def get_files_with_metadata(dataset_id: int):

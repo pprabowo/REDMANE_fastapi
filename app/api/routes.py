@@ -527,6 +527,7 @@ async def get_datasets(
             query += " AND id = %s"
             params.append(dataset_id)
 
+        query += "ORDER BY project_id ASC, id ASC;"
         cursor.execute(query, params)
         rows = cursor.fetchall()
         conn.close()

@@ -891,3 +891,59 @@ async def get_files_with_metadata(dataset_id: int):
 
     except Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+@router.get("/{datasetId}/external-links")
+async def get_dataset_external_links(datasetId: str):
+    """
+    Get only metadata entries where key contains "url".
+    
+    Metadata Rules:
+    - Any metadata key containing "url" is treated as an external link
+    - Multiple url_* keys allowed
+    - Values must be strings
+    - URLs must start with "https://" if key contains "url"
+    
+    Returns:
+        - datasetId: The dataset identifier
+        - links: List of external link metadata entries
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Query only metadata where key contains 'url'
+        query = """
+            SELECT key, value 
+            FROM datasets_metadata 
+            WHERE dataset_id = %s 
+            AND key LIKE %s
+            AND key NOT LIKE %s
+            ORDER BY key
+        """
+        cursor.execute(query, (datasetId, '%url%', '%_label'))
+        link_rows = cursor.fetchall()
+
+        links = []
+        for row in link_rows:
+            key = row[0]
+            url = row[1]
+            
+            # Validate URL format if key contains "url"
+            if "url" in key.lower() and not url.startswith("https://"):
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"URL for key '{key}' must start with 'https://'"
+                )
+            
+            links.append({"key": key, "url": url})
+
+        conn.close()
+
+        return {
+            "datasetId": datasetId,
+            "links": links
+        }
+
+    except Error as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")

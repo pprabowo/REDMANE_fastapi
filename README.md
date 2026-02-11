@@ -17,15 +17,18 @@ Data Commons is a web application using a fastAPI backend.
 ```plaintext
 REDMANE_fastapi/
 ├── app/
-│   │   ├── __init__.py             # Initializes the API package
+│   ├── api/
+│   │   ├── __init__.py             # Initialises the API package
 │   │   └── routes.py               # Defines API endpoints
 │   ├── schemas/
-│   │   ├── __init__.py             # Initializes the schemas package
+│   │   ├── __init__.py             # Initialises the schemas package
 │   │   └── schemas.py              # Defines Pydantic models for data validation
+│   ├── routers/
+│   │   ├── __init__.py             # Initialises the routers package
+│   │   └── auth.py                 # Keycloak SSO authentication (JWT token verification)
+│   ├── __init__.py                 # Currently empty init file
 │   └── main.py                     # Entry point for the FastAPI application
 ├── data/
-│   ├── REDMANE_fastapi_public_data/
-│   │   ├── readmedatabase.sql      # PostgreSQL to set up database
 │   ├── sample_data/                # Sample datasets and scripts for testing
 │   │   ├── clear_patients_and_samples.sh  # Script to clear sample data
 │   │   ├── import_onj_patients.py  # Script to import ONJ patients
@@ -36,15 +39,14 @@ REDMANE_fastapi/
 │   │   └── redcap_rmh.csv          # Sample RMH patient data
 │   └── sample_files/               # Sample files for raw data tracking
 │       └── tracker/                # Folder for tracking scripts and raw data
+│           ├── create_counts_file_big.py   # Script for processing large count files
+│           ├── create_counts_file_size.py  # Script for calculating file size
+│           ├── create_fastq_size.py        # Script for FASTQ size processing
+│           ├── file_report.py              # Script for generating file reports
 │           ├── scrnaseq/raw/       # scRNA-seq raw data files
 │           │   └── random_file_2.fastq   # Example FASTQ file
 │           └── westn/raw/          # WES raw data files
-│               ├── *.fastq         # Example FASTQ files for testing
-│               ├── create_counts_file_big.py  # Script for processing large count files
-│               ├── create_counts_file_size.py # Script for calculating file size
-│               ├── create_fastq_size.py       # Script for FASTQ size processing
-│               └── file_report.py  # Script for generating file reports
-├── data_redmane.db                 # SQLite database file
+│               └── *.fastq         # Example FASTQ files for testing
 ├── LICENSE                         # Project license
 ├── README.md                       # Project documentation
 ├── .gitignore                      # Git ignore file
